@@ -51,6 +51,11 @@ func Load(path string) (*Config, error) {
 		cfg.VaultToken = os.Getenv("VAULT_TOKEN")
 	}
 
+	// Allow vault_address to be overridden by environment.
+	if addr := os.Getenv("VAULT_ADDR"); addr != "" {
+		cfg.VaultAddress = addr
+	}
+
 	return &cfg, nil
 }
 
@@ -60,6 +65,11 @@ func validate(cfg *Config) error {
 	}
 	if len(cfg.Command) == 0 {
 		return errors.New("command is required")
+	}
+	for i, s := range cfg.Secrets {
+		if s.Path == "" {
+			return fmt.Errorf("secrets[%d]: path must not be empty", i)
+		}
 	}
 	return nil
 }
