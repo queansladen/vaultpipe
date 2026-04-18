@@ -5,43 +5,40 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-
-	"github.com/vaultpipe/vaultpipe/internal/audit"
-	"github.com/vaultpipe/vaultpipe/internal/config"
-	"github.com/vaultpipe/vaultpipe/internal/exec"
-	"github.com/vaultpipe/vaultpipe/internal/resolve"
-	"github.com/vaultpipe/vaultpipe/internal/vault"
-	"github.com/vaultpipe/vaultpipe/internal/version"
+	"github.com/yourusername/vaultpipe/internal/audit"
+	"github.com/yourusername/vaultpipe/internal/config"
+	"github.com/yourusername/vaultpipe/internal/exec"
+	"github.com/yourusername/vaultpipe/internal/resolve"
+	"github.com/yourusername/vaultpipe/internal/signal"
+	"github.com/yourusername/vaultpipe/internal/vault"
+	"github.com/yourusername/vaultpipe/internal/version"
 )
 
-var cfgPath string
+var cfgFile string
 
 var rootCmd = &cobra.Command{
-	Use:   "vaultpipe",
-	Short: "Stream secrets from Vault into process environments",
-	Long:  version.FullString(),
-	RunE:  run,
+	Use:     "vaultpipe",
+	Short:   "Stream Vault secrets into a process environment",
+	Version: version.FullString(),
+	RunE:    run,
 }
 
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+func Execute() error {
+	return rootCmd.Execute()
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&cfgPath, "config", "c", "", "path to config file (required)")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "path to config file (required)")
 	_ = rootCmd.MarkPersistentFlagRequired("config")
 }
 
 func run(cmd *cobra.Command, _ []string) error {
-	cfg, err := config.Load(cfgPath)
+	cfg, err := config.Load(cfgFile)
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
-	auditor := audit.NewAuditor(cfg.Audit.Enabled, cfg.Audit.LogPath)
+	auditor := audit.NewAuditor(cfg.Audit.Enabled, os.Stderr)
 
 	client, err := vault.NewClient(cfg.Vault.Address, cfg.Vault.Token)
 	if err != nil {
@@ -54,11 +51,20 @@ func run(cmd *cobra.Command, _ []string) error {
 	}
 
 	resolver := resolve.NewResolver(client, auditor)
-	secrets, err := resolver.Resolve(cmd.Context(), mappings)
+
+	h := signal.NewHandler()
+	ctx, stop := h.WithContext(cmd.Context())
+	defer stop()
+
+	secrets, err := resolver.Resolve(ctx, mappings)
 	if err != nil {
 		return fmt.Errorf("resolving secrets: %w", err)
 	}
 
-	runner := exec.NewRunner(cfg.Command, secrets)
-	return runner.Run(cmd.Context())
+	runner := exec.NewRunner(cfg.Command, os.Environ(), secrets)
+	if err := runner.Run(ctx); err != nil {
+		return fmt.Errorf("running command: %w", err)
+	}
+
+	return nil
 }
