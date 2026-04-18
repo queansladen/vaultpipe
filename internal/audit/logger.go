@@ -60,3 +60,8 @@ func (l *Logger) SecretFetchFailed(path, key, reason string) error {
 func (l *Logger) ProcessStarted(command string) error {
 	return l.Log("process_start", "", "", true, command)
 }
+
+// ProcessFailed logs that the child process could not be started or exited with an error.
+func (l *Logger) ProcessFailed(command, reason string) error {
+	return l.Log("process_start", "", "", false, command+": "+reason)
+}
