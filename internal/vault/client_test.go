@@ -59,6 +59,9 @@ func TestReadSecretData_KVv1(t *testing.T) {
 	if data["API_KEY"] != "abc123" {
 		t.Errorf("expected API_KEY=abc123, got %v", data["API_KEY"])
 	}
+	if data["DB_PASS"] != "secret" {
+		t.Errorf("expected DB_PASS=secret, got %v", data["DB_PASS"])
+	}
 }
 
 func TestReadSecretData_NotFound(t *testing.T) {
@@ -76,5 +79,23 @@ func TestReadSecretData_NotFound(t *testing.T) {
 	_, err = client.ReadSecretData("secret/missing")
 	if err == nil {
 		t.Fatal("expected error for missing secret, got nil")
+	}
+}
+
+func TestReadSecretData_HTTPError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"errors":["permission denied"]}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{Address: server.URL, Token: "bad-token"})
+	if err != nil {
+		t.Fatalf("client creation failed: %v", err)
+	}
+
+	_, err = client.ReadSecretData("secret/protected")
+	if err == nil {
+		t.Fatal("expected error for HTTP 403 response, got nil")
 	}
 }
