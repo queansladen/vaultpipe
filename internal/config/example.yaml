@@ -1,0 +1,28 @@
+# vaultpipe example configuration
+
+# Vault server address (can also be set via VAULT_ADDR env var)
+vault_address: http://127.0.0.1:8200
+
+# Vault token (can also be set via VAULT_TOKEN env var)
+vault_token: s.exampletoken
+
+# Secrets to fetch from Vault.
+# Each entry specifies a KV path and maps secret keys to env var names.
+secrets:
+  - path: secret/myapp/database
+    env_vars:
+      # <env_var_name>: <vault_secret_key>
+      DB_HOST: host
+      DB_PORT: port
+      DB_PASSWORD: password
+
+  - path: secret/myapp/api
+    env_vars:
+      API_KEY: key
+      API_SECRET: secret
+
+# Command to execute with the secrets injected into its environment.
+command:
+  - ./myapp
+  - --config
+  - /etc/myapp/config.toml
