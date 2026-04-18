@@ -58,3 +58,12 @@ func TestFullString_ContainsBuildInfo(t *testing.T) {
 		}
 	}
 }
+
+func TestVersion_NoLeadingV(t *testing.T) {
+	// Version strings should be bare semver without a leading 'v' prefix,
+	// e.g. "0.1.0" rather than "v0.1.0", so callers can add prefixes as needed.
+	v := version.Version()
+	if strings.HasPrefix(v, "v") {
+		t.Fatalf("expected version without leading 'v' prefix, got %q", v)
+	}
+}
