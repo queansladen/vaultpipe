@@ -2,26 +2,28 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
 )
 
-// SecretMapping maps a Vault path to a set of env var overrides.
-type SecretMapping struct {
-	Path    string            `yaml:"path"`
-	EnvVars map[string]string `yaml:"env_vars"`
+// SecretRef describes a single Vault secret path to fetch.
+type SecretRef struct {
+	Path string `yaml:"path"`
 }
 
-// Config holds the top-level vaultpipe configuration.
+// Config holds the full vaultpipe configuration.
 type Config struct {
-	VaultAddress string          `yaml:"vault_address"`
-	VaultToken   string          `yaml:"vault_token"`
-	Secrets      []SecretMapping `yaml:"secrets"`
-	Command      []string        `yaml:"command"`
+	VaultAddress string            `yaml:"vault_address"`
+	VaultToken   string            `yaml:"vault_token"`
+	Secrets      []SecretRef       `yaml:"secrets"`
+	Env          map[string]string `yaml:"env"`
+	Command      []string          `yaml:"command"`
 }
 
-// Load reads and parses a YAML config file from the given path.
+// Load reads and validates a YAML config file from the given path.
+// If path is empty, it returns an error.
 func Load(path string) (*Config, error) {
 	if path == "" {
 		return nil, errors.New("config path must not be empty")
@@ -29,7 +31,7 @@ func Load(path string) (*Config, error) {
 
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open config: %w", err)
 	}
 	defer f.Close()
 
@@ -37,25 +39,26 @@ func Load(path string) (*Config, error) {
 	decoder := yaml.NewDecoder(f)
 	decoder.KnownFields(true)
 	if err := decoder.Decode(&cfg); err != nil {
+		return nil, fmt.Errorf("decode config: %w", err)
+	}
+
+	if err := validate(&cfg); err != nil {
 		return nil, err
 	}
 
-	if err := cfg.Validate(); err != nil {
-		return nil, err
+	// Allow vault_token to be sourced from environment.
+	if cfg.VaultToken == "" {
+		cfg.VaultToken = os.Getenv("VAULT_TOKEN")
 	}
 
 	return &cfg, nil
 }
 
-// Validate checks that required fields are present.
-func (c *Config) Validate() error {
-	if c.VaultAddress == "" {
+func validate(cfg *Config) error {
+	if cfg.VaultAddress == "" {
 		return errors.New("vault_address is required")
 	}
-	if c.VaultToken == "" {
-		return errors.New("vault_token is required")
-	}
-	if len(c.Command) == 0 {
+	if len(cfg.Command) == 0 {
 		return errors.New("command is required")
 	}
 	return nil
