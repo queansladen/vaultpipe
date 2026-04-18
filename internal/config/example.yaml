@@ -1,27 +1,27 @@
 # vaultpipe example configuration
+vault_address: "https://vault.example.com"
+vault_token: "s.XXXXXXXXXXXX"
 
-# Address of the Vault server.
-vault_address: "http://127.0.0.1:8200"
+# audit_log controls structured JSON audit output.
+# Set enabled: true and provide a file path, or omit path to write to stderr.
+audit_log:
+  enabled: true
+  path: "/var/log/vaultpipe/audit.log"
 
-# Token used to authenticate with Vault.
-# Can also be set via the VAULT_TOKEN environment variable.
-vault_token: "root"
-
-# List of Vault secret paths to fetch before launching the command.
+# secrets maps environment variable names to Vault paths and keys.
 secrets:
-  - path: secret/db
-  - path: secret/api
+  - env: DB_PASSWORD
+    path: secret/data/myapp
+    key: db_password
+  - env: API_KEY
+    path: secret/data/myapp
+    key: api_key
+  - env: SMTP_PASS
+    path: secret/data/smtp
+    key: password
 
-# Environment variables injected into the child process.
-# Values support Go template expressions using the secret function:
-#   {{ secret "<path>" "<key>" }}
-env:
-  DB_PASSWORD: '{{ secret "secret/db" "password" }}'
-  DB_USER: '{{ secret "secret/db" "user" }}'
-  API_KEY: '{{ secret "secret/api" "key" }}'
-  APP_ENV: production
-
-# Command and arguments to execute with the resolved environment.
+# command is the process to execute with the injected environment.
 command:
-  - ./myapp
-  - serve
+  - "/usr/bin/myapp"
+  - "--config"
+  - "/etc/myapp/config.toml"
