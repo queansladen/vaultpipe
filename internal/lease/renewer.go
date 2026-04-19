@@ -41,6 +41,10 @@ func (r *Renewer) Start(ctx context.Context) {
 
 	for {
 		waitDuration := time.Duration(float64(r.lease.Duration) * r.threshold)
+		if waitDuration <= 0 {
+			log.Printf("vaultpipe: lease %s has non-positive wait duration, stopping renewal", r.lease.LeaseID)
+			return
+		}
 		select {
 		case <-ctx.Done():
 			return
@@ -53,4 +57,9 @@ func (r *Renewer) Start(ctx context.Context) {
 			r.lease.Duration = newDuration
 		}
 	}
+}
+
+// Lease returns the current SecretLease metadata, reflecting any updated durations after renewal.
+func (r *Renewer) Lease() SecretLease {
+	return r.lease
 }
