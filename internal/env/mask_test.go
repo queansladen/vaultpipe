@@ -62,3 +62,11 @@ func TestMask_EmptyChar_DefaultsStar(t *testing.T) {
 		t.Errorf("unexpected: %s", out[0])
 	}
 }
+
+func TestMask_FullMode_EmptyValue(t *testing.T) {
+	m := NewMasker(MaskFull, "*", 0)
+	out := m.Apply([]string{"K="})
+	if out[0] != "K=" {
+		t.Errorf("unexpected: %s", out[0])
+	}
+}
