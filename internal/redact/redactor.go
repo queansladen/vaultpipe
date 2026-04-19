@@ -42,3 +42,8 @@ func (r *Redactor) Mask() string {
 func (r *Redactor) Len() int {
 	return len(r.secrets)
 }
+
+// Reset removes all registered secrets, leaving the mask unchanged.
+func (r *Redactor) Reset() {
+	r.secrets = r.secrets[:0]
+}
