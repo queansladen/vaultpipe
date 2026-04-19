@@ -47,6 +47,22 @@ func TestTruncate_SuffixLargerThanLimit(t *testing.T) {
 	}
 }
 
+func TestTruncate_ExactLimit(t *testing.T) {
+	tr := NewTruncator(5, "")
+	got := tr.Truncate("hello")
+	if got != "hello" {
+		t.Fatalf("expected 'hello', got %q", got)
+	}
+}
+
+func TestTruncate_EmptyString(t *testing.T) {
+	tr := NewTruncator(5, "...")
+	got := tr.Truncate("")
+	if got != "" {
+		t.Fatalf("expected empty string, got %q", got)
+	}
+}
+
 func TestApply_TruncatesValues(t *testing.T) {
 	tr := NewTruncator(4, "")
 	pairs := []string{"FOO=abcdef", "BAR=xy", "MALFORMED"}
