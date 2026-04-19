@@ -50,10 +50,17 @@ func TestInherit_Filtered_WithRules(t *testing.T) {
 	f := NewFilter([]string{"_VP_KEEP"})
 	pairs := Inherit(InheritFiltered, f)
 
+	keptFound := false
 	for _, p := range pairs {
 		if strings.HasPrefix(p, "_VP_DROP=") {
 			t.Error("_VP_DROP should have been filtered out")
 		}
+		if strings.HasPrefix(p, "_VP_KEEP=") {
+			keptFound = true
+		}
+	}
+	if !keptFound {
+		t.Error("expected _VP_KEEP in filtered environment")
 	}
 }
 
