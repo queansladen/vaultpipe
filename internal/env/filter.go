@@ -50,3 +50,10 @@ func (f *Filter) Apply(pairs []string) []string {
 	}
 	return out
 }
+
+// Blocked returns true when the key should be excluded. It is the inverse of
+// Allow and is provided as a convenience for callers that read more naturally
+// when checking for exclusion rather than inclusion.
+func (f *Filter) Blocked(key string) bool {
+	return !f.Allow(key)
+}
