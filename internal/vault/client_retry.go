@@ -44,6 +44,20 @@ func (c *Client) ReadSecretDataWithRetry(ctx context.Context, path string, p ret
 	return data, nil
 }
 
+// WriteSecretDataWithRetry wraps WriteSecretData with retry logic, retrying
+// only on transient errors indicated by RetryableError status codes.
+func (c *Client) WriteSecretDataWithRetry(ctx context.Context, path string, data map[string]interface{}, p retry.Policy) error {
+	return retry.Do(ctx, p, func() error {
+		if err := c.WriteSecretData(ctx, path, data); err != nil {
+			if re, ok := err.(*RetryableError); ok && isRetryable(re.StatusCode) {
+				return err
+			}
+			return &fatalError{cause: err}
+		}
+		return nil
+	})
+}
+
 // RetryableError carries an HTTP status code for retry decisions.
 type RetryableError struct {
 	StatusCode int
