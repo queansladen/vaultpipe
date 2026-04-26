@@ -54,3 +54,9 @@ func Do(ctx context.Context, p Policy, fn func() error) error {
 	}
 	return errors.Join(ErrMaxAttempts, lastErr)
 }
+
+// IsMaxAttemptsError reports whether err was caused by exhausting all retry
+// attempts, as opposed to context cancellation or another error type.
+func IsMaxAttemptsError(err error) bool {
+	return errors.Is(err, ErrMaxAttempts)
+}
