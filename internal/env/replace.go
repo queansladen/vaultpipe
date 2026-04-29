@@ -43,3 +43,16 @@ func (r *Replacer) Apply(pairs []string) []string {
 	}
 	return out
 }
+
+// ApplyToValue performs all replacements on a single string value.
+// This is useful when operating on an individual value rather than
+// a slice of KEY=VALUE pairs.
+func (r *Replacer) ApplyToValue(val string) string {
+	for _, rule := range r.rules {
+		if rule.Find == "" {
+			continue
+		}
+		val = strings.ReplaceAll(val, rule.Find, rule.Replace)
+	}
+	return val
+}
