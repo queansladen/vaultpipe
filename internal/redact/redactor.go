@@ -47,3 +47,13 @@ func (r *Redactor) Len() int {
 func (r *Redactor) Reset() {
 	r.secrets = r.secrets[:0]
 }
+
+// Contains reports whether the given value is already registered as a secret.
+func (r *Redactor) Contains(value string) bool {
+	for _, s := range r.secrets {
+		if s == value {
+			return true
+		}
+	}
+	return false
+}
