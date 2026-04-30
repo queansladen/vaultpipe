@@ -27,6 +27,12 @@ func (c *Checkpoint) Name() string { return c.name }
 // Len returns the number of recorded keys.
 func (c *Checkpoint) Len() int { return len(c.records) }
 
+// Get returns the value for key and whether it was present in the checkpoint.
+func (c *Checkpoint) Get(key string) (string, bool) {
+	v, ok := c.records[key]
+	return v, ok
+}
+
 // Diff returns keys whose values differ between c and next, as "KEY=old->new" strings.
 func (c *Checkpoint) Diff(next *Checkpoint) []string {
 	seen := make(map[string]struct{})
